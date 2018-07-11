@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Writing Chrome Extensions | It’s a feature not a bug</title>
+<meta name="generator" content="Jekyll v3.8.3" />
+<meta property="og:title" content="Writing Chrome Extensions" />
+<meta name="author" content="Adam Ladachowski" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="I love Google. I truly do. Not because of all the “free” stuff they let you use, but because of the endless supply of development tools and resources one can get from them. Be that Web Fonts or Hosted libraries or their SDK’s and API’s." />
+<meta property="og:description" content="I love Google. I truly do. Not because of all the “free” stuff they let you use, but because of the endless supply of development tools and resources one can get from them. Be that Web Fonts or Hosted libraries or their SDK’s and API’s." />
+<meta property="og:site_name" content="It’s a feature not a bug" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2013-02-21T05:56:00+01:00" />
+<script type="application/ld+json">
+{"url":"/2013/02/21/writing-chrome-extensions.html","headline":"Writing Chrome Extensions","dateModified":"2013-02-21T05:56:00+01:00","datePublished":"2013-02-21T05:56:00+01:00","author":{"@type":"Person","name":"Adam Ladachowski"},"description":"I love Google. I truly do. Not because of all the “free” stuff they let you use, but because of the endless supply of development tools and resources one can get from them. Be that Web Fonts or Hosted libraries or their SDK’s and API’s.","mainEntityOfPage":{"@type":"WebPage","@id":"/2013/02/21/writing-chrome-extensions.html"},"@type":"BlogPosting","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="It's a feature not a bug" /></head>
+<body><header class="site-header" role="banner">
+  <div class="wrapper"><a class="site-title" rel="author" href="/">
+      <img class="site-logo" src="/assets/logo.png" alt=It&#39;s a feature not a bug>
+    </a>
+    <nav class="site-nav">
+      <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+      <label for="nav-trigger">
+        <span class="menu-icon">
+          <svg viewBox="0 0 18 15" width="18px" height="15px">
+            <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+          </svg>
+        </span>
+      </label>
+
+      <div class="trigger">
+        <a class="page-link" href="https://saiden.pl" target="_blank">Portfolio</a>
+      </div>
+    </nav>
+  </div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Writing Chrome Extensions</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2013-02-21T05:56:00+01:00" itemprop="datePublished">2013-02-21
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>I love Google. I truly do. Not because of all the “free” stuff they let you use, but because of the endless supply of development tools and resources one can get from them. Be that <a href="http://www.google.com/webfonts">Web Fonts</a> or <a href="https://developers.google.com/speed/libraries/">Hosted libraries</a> or their <a href="https://developers.google.com/products/">SDK’s and API’s</a>.</p>
+
+<p>I recently came across a tutorial on writing your own Chrome extensions, and frankly was surprised how easy it came out be. I recommend reading the <a href="http://developer.chrome.com/extensions/getstarted.html">tutorial</a>.</p>
+
+<p>For a person with even mediocre understanding of HTML and JavaScript it shouldn’t pose a problem to put together a simple extension of their own.</p>
+
+<p>You start with preparing a <code>manifest.json</code> file, which pretty much is what its name implies. This describes the extension and by means of the <code>permissions</code> settings allows for example to bypass <a href="http://en.wikipedia.org/wiki/Same_origin_policy">Same origin policy</a>, shoud you want to use AJAX, but we will focus on something very simple - namely injecting your code into the document loaded in the currently selected tab.</p>
+
+<p><code>manifest.json</code></p>
+
+<pre class="prettyprint">
+{
+  "name": "A browser action running JQuery on loaded docs DOM",
+  "version": "1.0",
+  "background": { "scripts": ["background.js"] },
+  "permissions": [
+    "http://*/*"
+  ],
+  "browser_action": {
+    "name": "Run me!"
+  },
+  "manifest_version": 2
+}
+</pre>
+
+<p>Now we have to fashion up a <code>background.js</code> file with a listener which will be triggered by the event of pressing the extension button. The triggered action will be loading the <code>jquery.min.js</code>, and as its callback executing the short JQuery code, which adds the word test at the begining of documents body contents.</p>
+
+<p><code>background.js</code></p>
+
+<pre class="prettyprint">
+chrome.browserAction.onClicked.addListener(function(tab) {
+  chrome.tabs.executeScript(null, {file:"jquery.min.js"}, function() {
+    chrome.tabs.executeScript(null, {code:"$('body').prepend('Test');"});
+  });
+});
+
+</pre>
+
+<p>After that you just make sure all the files are saved in the same directory and:</p>
+
+<ul><li>start Chrome</li>
+<li>open the extensions tab (chrome://extensions)</li>
+<li>check the developer mode</li>
+<li>click “load unpacked extension”</li>
+<li>select your extension directory</li>
+</ul><p>…and that’s the whole shebang. Your extension should be loaded, which will be indicated by the little puzzle piece icon top right corner. After that load up a page and test it. Each time you press it, the word <em>“Test”</em> wrapped in <code>h1</code> tags in should be added to the beginning of the documents body.</p>
+
+<p>That&rsquo;s hardly a useful extension but you can do much more, for example:</p>
+
+<ul><li>add a nifty download button to a site like YouTube</li>
+<li>change the looks of pages you visit by hiding parts of them, or changing their looks altogether</li>
+<li>communicate with Chromes options and features</li>
+</ul><p>There are loads of ready <a href="http://developer.chrome.com/extensions/samples.html">examples</a> on the Google Chrome Extensions pages, along with more detailed guides explaining what, when and why.</p>
+
+  </div><a class="u-url" href="/2013/02/21/writing-chrome-extensions.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">It&#39;s a feature not a bug</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Adam Ladachowski</li><li><a class="u-email" href="mailto:adam@saiden.pl">adam@saiden.pl</a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"><li><a href="https://github.com/aladac"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">aladac</span></a></li><li><a href="https://twitter.com/aladac"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">aladac</span></a></li><li><a href="/feed.xml"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#rss"></use></svg> <span>rss</span></a></li></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>A collections of random thoughts and ideas
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
